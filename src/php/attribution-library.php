@@ -38,11 +38,20 @@ function swma_register_routes() {
 		'swma/v1',
 		'/links/(?P<id>\d+)',
 		array(
-			'methods'             => 'DELETE',
-			'callback'            => 'swma_delete_link',
-			'permission_callback' => function () {
-				return current_user_can( 'read' );
-			},
+			array(
+				'methods'             => 'DELETE',
+				'callback'            => 'swma_delete_link',
+				'permission_callback' => function () {
+					return current_user_can( 'read' );
+				},
+			),
+			array(
+				'methods'             => 'PATCH',
+				'callback'            => 'swma_update_link_notes',
+				'permission_callback' => function () {
+					return current_user_can( 'read' );
+				},
+			),
 		)
 	);
 
@@ -99,10 +108,19 @@ function swma_create_link( $request ) {
 
 	// Check if a link with the same final_url already exists.
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-	$existing = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM `' . esc_sql( $table_name ) . '` WHERE final_url = %s LIMIT 1', $final_url ) );
+	$existing_id = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM `' . esc_sql( $table_name ) . '` WHERE final_url = %s LIMIT 1', $final_url ) );
 
-	if ( $existing ) {
-		return new WP_Error( 'link_exists', 'This link already exists in your link library. Please find it in the link library along with any accompanying notes and copy it to your clipboard from there.', array( 'status' => 409 ) );
+	if ( $existing_id ) {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_link = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM `' . esc_sql( $table_name ) . '` WHERE id = %d', $existing_id ) );
+		return new WP_REST_Response(
+			array(
+				'code'    => 'link_exists',
+				'message' => 'Duplicate link found.',
+				'link'    => $existing_link,
+			),
+			409
+		);
 	}
 
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -153,6 +171,44 @@ function swma_delete_link( $request ) {
 			'id'      => $id,
 		)
 	);
+}
+
+/**
+ * PATCH /links/<id> - Update notes for an existing link.
+ *
+ * @param WP_REST_Request $request The request object.
+ */
+function swma_update_link_notes( $request ) {
+	global $wpdb;
+	$table_name = swma_get_table_name( 'links' );
+	$id         = (int) $request['id'];
+
+	$params = $request->get_json_params();
+	$notes  = sanitize_textarea_field( $params['notes'] ?? '' );
+
+	// Verify the link exists before updating.
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$exists = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM `' . esc_sql( $table_name ) . '` WHERE id = %d LIMIT 1', $id ) );
+
+	if ( ! $exists ) {
+		return new WP_Error( 'link_not_found', 'Link not found', array( 'status' => 404 ) );
+	}
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	$updated = $wpdb->update(
+		$table_name,
+		array( 'notes' => $notes ),
+		array( 'id' => $id )
+	);
+
+	if ( false === $updated ) {
+		return new WP_Error( 'db_update_error', 'Could not update link notes', array( 'status' => 500 ) );
+	}
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$link = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM `' . esc_sql( $table_name ) . '` WHERE id = %d', $id ) );
+
+	return rest_ensure_response( $link );
 }
 
 /**

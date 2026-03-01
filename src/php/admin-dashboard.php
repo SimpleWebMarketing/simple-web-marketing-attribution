@@ -72,8 +72,9 @@ function swma_fix_admin_menu_highlighting( $submenu_file ) {
 	global $parent_file;
 
 	if ( 'swma-dashboard' === $parent_file ) {
-		if ( isset( $_GET['view'] ) ) {
-			$view = sanitize_text_field( wp_unslash( $_GET['view'] ) );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only URL param for admin menu navigation; no state is modified.
+		if ( isset( $_GET['view'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$view = sanitize_text_field( wp_unslash( $_GET['view'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return 'swma-dashboard&view=' . $view;
 		}
 	}
