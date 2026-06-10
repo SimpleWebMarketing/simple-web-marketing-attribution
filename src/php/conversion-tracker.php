@@ -87,6 +87,11 @@ function swma_log_conversion_to_db( $data ) {
 			'utm_content'  => $args['utm_content'],
 		)
 	);
+
+	// Dual-write to SWM Cloud if opt-in is enabled (non-blocking — no latency added).
+	if ( function_exists( 'swma_cloud_sync_conversion' ) ) {
+		swma_cloud_sync_conversion( $args );
+	}
 }
 
 /**

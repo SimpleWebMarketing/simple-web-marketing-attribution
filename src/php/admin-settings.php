@@ -83,12 +83,20 @@ function swma_get_attribution_settings() {
 		$options['enable_salesforce'] = true;
 	}
 
+	// Ensure swma_cloud_sync_enabled exists.
+	if ( ! isset( $options['swma_cloud_sync_enabled'] ) ) {
+		$options['swma_cloud_sync_enabled'] = false;
+	}
+
 	// Add HubSpot plugin status.
 	if ( ! function_exists( 'is_plugin_active' ) ) {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 	}
 	$options['isHubSpotActive']    = is_plugin_active( 'leadin/leadin.php' );
 	$options['isSalesforceActive'] = true; // Always active now.
+
+	// Include cloud account metadata (read-only; managed by swma-cloud-sync.php).
+	$options['cloud_account'] = function_exists( 'swma_cloud_get_account' ) ? swma_cloud_get_account() : null;
 
 	return $options;
 }
@@ -158,13 +166,49 @@ function swma_rest_get_settings() {
 /**
  * UPDATE settings callback.
  *
+ * Saves the incoming settings. When cloud sync is being enabled for the first
+ * time (toggle was off, is now on) and no API key is stored, triggers site
+ * registration with the SWM Cloud Platform. If registration fails, the toggle
+ * is rolled back to false so the saved state remains consistent, and a
+ * cloud_error key is included in the response for the UI to display.
+ *
  * @param WP_REST_Request $request The request object.
  */
 function swma_rest_update_settings( $request ) {
-	$params    = $request->get_params();
+	$params = $request->get_params();
+
+	// Capture previous state before overwriting.
+	$old_settings    = swma_get_attribution_settings();
+	$was_sync_on     = ! empty( $old_settings['swma_cloud_sync_enabled'] );
+	$new_sync_on     = isset( $params['swma_cloud_sync_enabled'] ) && (bool) $params['swma_cloud_sync_enabled'];
+	$sync_toggled_on = $new_sync_on && ! $was_sync_on;
+
 	$sanitized = swma_settings_sanitize( $params );
 	update_option( 'swma_settings', $sanitized );
-	return new WP_REST_Response( $sanitized, 200 );
+
+	$cloud_error = null;
+
+	// Trigger registration when sync is being enabled and no key is stored yet.
+	if ( $sync_toggled_on && function_exists( 'swma_cloud_get_account' ) && null === swma_cloud_get_account() ) {
+		$result = swma_cloud_register_site();
+		if ( ! $result['ok'] ) {
+			// Roll back the toggle so saved state is consistent with no account.
+			$sanitized['swma_cloud_sync_enabled'] = false;
+			update_option( 'swma_settings', $sanitized );
+			$cloud_error = $result['error'];
+		}
+	}
+
+	// Attach read-only fields that the React UI needs.
+	$response_data                       = $sanitized;
+	$response_data['isHubSpotActive']    = $old_settings['isHubSpotActive'];
+	$response_data['isSalesforceActive'] = $old_settings['isSalesforceActive'];
+	$response_data['cloud_account']      = function_exists( 'swma_cloud_get_account' ) ? swma_cloud_get_account() : null;
+	if ( null !== $cloud_error ) {
+		$response_data['cloud_error'] = $cloud_error;
+	}
+
+	return new WP_REST_Response( $response_data, 200 );
 }
 
 /**
@@ -205,6 +249,7 @@ function swma_settings_sanitize( $input ) {
 		$new_input['debug_mode']                = isset( $input['debug_mode'] ) ? (bool) $input['debug_mode'] : false;
 		$new_input['enable_salesforce']         = true; // Always enabled.
 		$new_input['respect_marketing_consent'] = isset( $input['respect_marketing_consent'] ) ? (bool) $input['respect_marketing_consent'] : false;
+		$new_input['swma_cloud_sync_enabled']   = isset( $input['swma_cloud_sync_enabled'] ) ? (bool) $input['swma_cloud_sync_enabled'] : false;
 
 		// Map back to legacy fields for older JS.
 		$new_input['respect_analytics_consent'] = $new_input['respect_marketing_consent'];
@@ -235,6 +280,7 @@ function swma_settings_sanitize( $input ) {
 		$new_input['debug_mode']                = isset( $input['debug_mode'] ) ? (bool) $input['debug_mode'] : false;
 		$new_input['enable_salesforce']         = true; // Always enabled.
 		$new_input['respect_marketing_consent'] = isset( $input['respect_marketing_consent'] ) ? (bool) $input['respect_marketing_consent'] : false;
+		$new_input['swma_cloud_sync_enabled']   = isset( $input['swma_cloud_sync_enabled'] ) ? (bool) $input['swma_cloud_sync_enabled'] : false;
 
 		// Map back to legacy fields for older JS.
 		$new_input['respect_analytics_consent'] = $new_input['respect_marketing_consent'];

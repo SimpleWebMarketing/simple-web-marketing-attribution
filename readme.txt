@@ -3,7 +3,7 @@ Contributors: simplewebmarketing
 Tags: attribution, marketing, utm, referrer, tracking
 Requires at least: 4.7
 Tested up to: 6.9
-Stable tag: 1.2.3
+Stable tag: 2.0.0
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -35,7 +35,18 @@ The plugin includes:
 
 == External services ==
 
-This plugin utilizes the HubSpot Forms API to provide advanced attribution tracking for HubSpot forms.
+This plugin optionally connects to two external services, both operated by Simple Web Marketing. Connection to the Simple Web Marketing Cloud is opt-in and can be disabled from the Settings screen at any time.
+
+**Simple Web Marketing Cloud (opt-in)**
+
+*   **Service:** Simple Web Marketing Cloud Platform (operated by Simple Web Marketing, simplewebmarketing.com)
+*   **Purpose (registration):** When cloud sync is first enabled, the plugin registers your site by sending your site URL, admin email address, and site name to the registration endpoint. This creates an account and returns an API key that is stored locally. Registration only happens once per site.
+*   **Purpose (conversion sync):** After each form submission or phone-click conversion recorded locally, the plugin sends the UTM attribution data (source, medium, campaign, term, content), page URL, event type, and timestamp to the SWM Cloud ingest endpoint. This is a fire-and-forget request that does not affect page performance.
+*   **Data Sent:** Site URL, admin email (registration only), site name (registration only), UTM parameters, page URL, event type, timestamp.
+*   **When data is sent:** Only when cloud sync is enabled in Settings and only on conversion events.
+*   **Terms & Privacy:** [Terms of Service](https://www.simplewebmarketing.com/terms/) — [Privacy Policy](https://www.simplewebmarketing.com/privacy-policy/)
+
+**HubSpot Forms API (opt-in, existing feature)**
 
 *   **Service:** HubSpot Forms API (provided by HubSpot, Inc.)
 *   **Purpose:** To submit form data and associated marketing attribution metadata (UTM parameters, referrer) from your site to your HubSpot portal when the HubSpot Proxy feature is used.

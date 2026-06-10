@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Simple Web Marketing Attribution
  * Description: A plugin to capture and store attribution data including UTM parameters and referrer information.
- * Version: 1.2.3
+ * Version: 2.0.0
  * Author: Simple Web Marketing
  * Author URI: https://www.simplewebmarketing.com
  * License: GPL2
@@ -104,6 +104,7 @@ function swma_add_salesforce_meta_tag() {
 require_once plugin_dir_path( __FILE__ ) . 'src/php/db-handler.php';
 require_once plugin_dir_path( __FILE__ ) . 'src/php/admin-dashboard.php';
 require_once plugin_dir_path( __FILE__ ) . 'src/php/admin-settings.php';
+require_once plugin_dir_path( __FILE__ ) . 'src/php/swma-cloud-sync.php';
 require_once plugin_dir_path( __FILE__ ) . 'src/php/hubspot-proxy.php';
 require_once plugin_dir_path( __FILE__ ) . 'src/php/conversion-tracker.php';
 require_once plugin_dir_path( __FILE__ ) . 'src/php/attribution-library.php';
