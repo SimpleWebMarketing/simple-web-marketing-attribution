@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Simple Web Marketing Attribution
  * Description: A plugin to capture and store attribution data including UTM parameters and referrer information.
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Simple Web Marketing
  * Author URI: https://www.simplewebmarketing.com
  * License: GPL2
