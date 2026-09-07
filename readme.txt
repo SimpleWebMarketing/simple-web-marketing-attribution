@@ -2,8 +2,8 @@
 Contributors: simplewebmarketing
 Tags: attribution, marketing, utm, referrer, tracking
 Requires at least: 4.7
-Tested up to: 6.9
-Stable tag: 2.0.1
+Tested up to: 7.1
+Stable tag: 2.0.2
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -72,6 +72,9 @@ The attribution data is captured with the form submission without the website vi
 5. Simple to find and follow instructions.
 
 == Changelog ==
+
+= 2.0.2 =
+*   **WordPress 7.1 Compatibility:** Verified compatible with WordPress 7.1 "Mary Lou" — no code changes required.
 
 = 1.2.3 =
 *   **Admin UI Polish:** Refined page titles and helper text across Link Builder and Link Library for better clarity.
